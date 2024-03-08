@@ -3,13 +3,13 @@
 ## Contents
 _____________
 ### Planning - Serum Visions
-A folder encapsulating all files about part 1: Planning. 
-Contains 5 PDDL files, 1 domain, and 4 problem files. 
+A folder encapsulating all files about part 1: Planning. \\ 
+Contains 5 PDDL files, 1 domain, and 4 problem files. \\ 
 `SerumVisions.pddl`
 
-`Problem4-ComplexBoardstate.pddl` | Problem Files For 4 Separate Situations, Outlined in `GitaxianProbeReport`
-`Problem3-ComplexCreatures.pddl`  | 
-`Problem2-IntroducingSpells.pddl` |
+`Problem4-ComplexBoardstate.pddl` | Problem Files For 4 Separate Situations, Outlined in `GitaxianProbeReport` \n
+`Problem3-ComplexCreatures.pddl`  |  \n 
+`Problem2-IntroducingSpells.pddl` | \\
 `Problem1-SimpleSetup.pddl`       |
 
 ### Networks
