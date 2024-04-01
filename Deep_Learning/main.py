@@ -156,7 +156,7 @@ def preprocessing(pdata):
             pdata["has_keyword_"+i] = False
 
     current = pdata.pop('games')
-    for i in ["paper","mtgo","mtga"]:
+    for i in ["paper","mtgo","arena"]:
         if i in current:
             pdata["is_in_"+i] = True
         else: 
