@@ -269,6 +269,7 @@ def make_deep_learning():
         optimizer=keras.optimizers.RMSprop(),
         metrics=[keras.metrics.SparseCategoricalAccuracy()],
     )
+    
     model.summary()
     model.save("path_to_my_model.keras")
 
