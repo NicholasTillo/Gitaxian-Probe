@@ -102,17 +102,17 @@ def preprocessing(pdata):
     current = pdata.pop('colors')
     for i in ["W","U","B","R","G"]:
         if i in current:
-            pdata["has_"+i] = True
+            pdata["has_"+i] = "1"
         else: 
-            pdata["has_"+i] = False
+            pdata["has_"+i] = "0"
 
     #Then Colour Identities
     current = pdata.pop('color_identity')
     for i in ["W","U","B","R","G"]:
         if i in current:
-            pdata["has_"+i+"_identity"] = True
+            pdata["has_"+i+"_identity"] = "1"
         else: 
-            pdata["has_"+i+"_identity"] = False
+            pdata["has_"+i+"_identity"] = "0"
 
     #Then the Keywords. 
     current = pdata.pop('keywords')
@@ -151,34 +151,34 @@ def preprocessing(pdata):
     for i in all_keywords:
         
         if i in current:
-            pdata["has_keyword_"+i] = True
+            pdata["has_keyword_"+i] = "1"
         else: 
-            pdata["has_keyword_"+i] = False
+            pdata["has_keyword_"+i] = "0"
 
     current = pdata.pop('games')
     for i in ["paper","mtgo","arena"]:
         if i in current:
-            pdata["is_in_"+i] = True
+            pdata["is_in_"+i] = "1"
         else: 
-            pdata["is_in_"+i] = False
+            pdata["is_in_"+i] = "0"
 
     current = pdata.pop('finishes')
     for i in ["nonfoil","foil"]:
         if i in current:
-            pdata["is_finish_"+i] = True
+            pdata["is_finish_"+i] = "1"
         else: 
-            pdata["is_finish_"+i] = False
+            pdata["is_finish_"+i] = "0"
 
     # remember to pop the salt score because it is no longer at the end
               
     return pdata
 
 def gather_ready_data(pdata, grouping):
+    
     #try to see if the data.json is already there (Which is should be)
     #pdata is the data we will make the file on if it does not already exsist. 
     #Grouping which section of the data it is, will return the corresponding arrays
     try: 
-        ERRORxERROR
         if grouping == "training":
             x = open('training_data.json', 'r+', encoding='utf-8')
             y = open('training_data_labels.json', 'r+', encoding='utf-8')
@@ -202,6 +202,16 @@ def gather_ready_data(pdata, grouping):
 
             list_vals = list(no_dict_list_vals.values())
             np_list = reduce_list(list_vals)
+            for i in range(len(np_list)):
+               
+                if np_list[i] == True: 
+                    np_list[i] = "1"
+                elif np_list[i] == False:
+                    np_list[i] = "0"
+                if type(np_list[i]) != str:
+                    np_list[i] = str(np_list[i])
+
+
 
             final_list.append(np_list) 
             counter += 1
@@ -224,7 +234,7 @@ def gather_ready_data(pdata, grouping):
             with open('testing_data_labels.json', 'w', encoding='utf-8') as f:
                 json.dump(y_vec, f, ensure_ascii=False, indent=4)
 
-        return np.array(final_list), np.array(y_vec)
+        return np.array(final_list),np.array(y_vec)
 
 
 
@@ -256,25 +266,143 @@ def reduce_list(plist):
     return flat_list
     
 
-def make_deep_learning():
-    inputs = keras.Input(shape=(41,))
-    dense = layers.Dense(64, activation="relu")(inputs)
-    dense2 = layers.Dense(64, activation="relu")(dense)
-    outputs = layers.Dense(10)(dense2)
-    model = keras.Model(inputs=inputs, outputs=outputs, name="mnist_model")
+def make_deep_learning(ptraining,p_y_vec,p_validationStuff,p_test_data,p_test_y_vec):
+    #IDK WHAT VALIDATION IS USED FOR YET
+    #RETURNS A KERAS MODEL. 
+    #MAKES IT IF IT DOESNT EXSIST 
+    try: 
+        ERRORxERROR
+        print("trying_to_read_model")
+        model = keras.models.load_model("path_to_my_model.keras")
+        print("taken")
+        return model
+
+    except:
+
+        #Preprocess again :SOB: 
+        #two options, Either splitting it on white space, or not. If we do itll 
+        #make it a 2D array, which i think is larger than not. 
+        #if we dont i THINK we will lose a bit of inforamtion, becuase each word wont be encoded.
+
+        #TESTINg
+        layer = keras.layers.TextVectorization(split = None)
+        #layer = keras.layers.TextVectorization()
 
 
-    model.compile(
-        loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        optimizer=keras.optimizers.RMSprop(),
-        metrics=[keras.metrics.SparseCategoricalAccuracy()],
-    )
+        for i in ptraining:
+            layer.adapt(i)
+
+        x = []
+        for i in ptraining:
+            v_text = layer(i)
+            x.append(v_text)
+        x = tf.stack(x)
+
+
+        validatio_x = []
+        
+        for i in p_validationStuff[0]:
+            validation_v_text = layer(i)
+            validatio_x.append(validation_v_text)
+        validatio_x = tf.stack(validatio_x)
+        
+            
+        validation_full = (validatio_x,p_validationStuff[1])
+        
+
+        test_x = []
+        for i in p_test_data:
+            test_v_text = layer(i)
+            test_x.append(test_v_text)
+        predict_data =  test_x[-1]
+        predict_salt = p_test_y_vec[-1]
+
+
+        p_test_y_vec = p_test_y_vec[:-1]
+        test_x = test_x[:-1]
+        test_x = tf.stack(test_x)
     
-    model.summary()
-    model.save("path_to_my_model.keras")
+    
 
+        """
+        inputs = keras.Input(shape = (262,))
+    
+        dense = layers.Dense(64, activation="relu")(inputs)
+        #Do a dropout here, 
+        dense2 = layers.Dense(64, activation="relu")(dense)
+        
+        outputs = layers.Dense(10)(dense2)
+        model = keras.Model(inputs=inputs, outputs=outputs, name="mnist_model")
+        """
+
+        model = tf.keras.models.Sequential([
+            tf.keras.layers.Input(shape=(262,)),
+            #tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dropout(0.2),
+            tf.keras.layers.Dense(64, activation='relu'),
+            #tf.keras.layers.Dropout(0.2),
+            #tf.keras.layers.Dense(10,activation="relu"),
+            tf.keras.layers.Dense(1)
+
+        ])
+
+        model.compile(
+            #This one can either be mean absolute error, 
+            #or mean squared logarithmic error. Im not sure which is better.
+            #keras.losses.MeanSquaredLogarithmicError(
+            #reduction="sum_over_batch_size", name="mean_squared_logarithmic_error"
+            #)
+        
+            loss=keras.losses.MeanAbsoluteError(
+                                                reduction="sum_over_batch_size", 
+                                                name="mean_absolute_error"
+                                                ),
+            #optimizer=keras.optimizers.Adam(),
+            #Reddit says adam is better, and a combination of adagrad and smn else, but idk what that smn else is so we do gradient decent. 
+
+            optimizer=keras.optimizers.Adagrad(),
+            #There are alot and alot of parameters that we need to account for in the constructor. 
+            #I think the biggest one is learning rate and maybe momentum, 
+            #But well see!
+            metrics=[keras.metrics.MeanSquaredError(name="mean_squared_error", dtype=None)],
+            #We can use a loss function as a metric, This metric is 
+            #Not used when training, but only on testing. Can be the same as the loss
+            #I think any regression one should work. Im just gonna use mean squared error. 
+        )
+        history = model.fit(
+                            x, 
+                            p_y_vec, 
+                            #validation_data = validation_full,
+                            validation_split = 0.2,
+                            verbose = 1
+                            #MAYBE SAMPLE WEIGHT. 
+                            )
+        
+        results = model.evaluate(
+                        test_x,
+                        p_test_y_vec
+                        )
+
+        print(results)
+        preditction = model.predict(predict_data)
+        print(preditction)
+
+        model.summary()
+        model.save("path_to_my_model.keras")
+
+
+        return model
+
+
+def test_model(pmodel,p_testing_x,p_y_vec):
+    test_scores = pmodel.evaluate(p_testing_x, p_y_vec, verbose=2)
+    return test_scores
 
 def main():
+    #THIS SHOULDNT BE LIKE THIS, ITS VERY VERY BAD CODE QUALITY, 
+    #BUT I CANT BE BOTHERED TO PUJT IT BACK INTO THE FUNCTION< 
+    #TRY NOT TO TOUCH IT ITS PRONE TO EXPLOSIONS. 
     data = gather_data()
     training,validation,testing  = split_data(data)
     print(len(data))
@@ -284,11 +412,13 @@ def main():
 
 
     #Gather both the data, and the labels for the training data. 
-    data_file,y_vec = gather_ready_data(training, "training")
-    print(data_file.shape)
-    print(y_vec.shape)
+    data_file_training , y_vec = gather_ready_data(training, "training")
     data_file_validation,y_vec_validation = gather_ready_data(validation, "validation")
     data_file_testing,y_vec_testing = gather_ready_data(testing, "testing")
+
+    model = make_deep_learning(data_file_training,y_vec,(data_file_validation,y_vec_validation),data_file_testing,y_vec_testing)
+
+
 
 
     
