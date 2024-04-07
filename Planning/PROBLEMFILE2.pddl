@@ -14,7 +14,7 @@
 ;creature bear 1
 (is_in_hand c_knight1)
 (is_owned_by_player c_knight1)
-(is_creature_colour c_knight1 green) 
+(is_creature_colour c_knight1 white) 
 ;stats
 (= (toughness c_knight1)2)
 (= (max_toughness c_knight1)2)
