@@ -4,7 +4,7 @@
 
 (:objects
     c_knight1 c_grizzlybear2 c_goblin1 c_aegis_turtle1 - creature
-    l_forest1  l_island1 - land 
+    l_plains1  l_island1 - land 
 )
 
 (:init
@@ -35,15 +35,15 @@
 
 
 ;lands
-(is_in_hand l_forest1)
+(is_in_hand l_plains1)
 (is_in_hand l_island1)
 
 
-(is_land_colour l_forest1 green) 
+(is_land_colour l_plains1 white) 
 (is_land_colour l_island1 blue) 
  
 
-	;Creatures
+	; Opponent Creatures
 
 
 (is_summoning_sick c_goblin1)
