@@ -61,7 +61,7 @@
 (is_land_colour l_plains1 white) 
 
 (is_in_hand l_swamp1)
-(is_land_colour l_swamp1 white) 
+(is_land_colour l_swamp1 black) 
 
  
 
