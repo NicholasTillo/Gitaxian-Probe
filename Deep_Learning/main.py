@@ -10,8 +10,15 @@ import time
 import flatdict
 import itertools
 
+#Keeping the randomization the same for testing.
+random.seed = (180)
 
+#For data collection purposes: 
 def sanitize_name(pname):
+    """
+    Turning creature name strings gathered from the json, and putting them into 
+    the form that the webstie will recognize. 
+    """
     final_name = pname.lower().replace(" ", "-").replace("'","").replace(",","").replace("í","i").replace("é","e").replace(".","")
     if "/" in pname:
         final_name = final_name.split("/")[0][:-1]
@@ -27,7 +34,7 @@ def get_salt_score(pname):
     EDHREC JSON, PRAYING THEY DONT BLOCK MY IP 
     putting a delay in there and doing name stuff so it gets to the right card. 
     """
-    #Turn name correct
+    #Turn name into the correct url.
     advanced_name = sanitize_name(pname)
     #Ping json edhrec for the data
     try:
@@ -63,7 +70,6 @@ def gather_data():
                 if not x in all_keys:
                     i[x] = ""
             dict_you_want = {key: i[key] for key in wanted_key}
-
             #check if we have already gathered the information about it. 
             try:
                 #if its already in there, then continue.
@@ -74,14 +80,17 @@ def gather_data():
                 #if not, then continue. 
                 pass
             #Gather the salt score for that specific card
+            #sleep for a bit to not get IP banned!
             time.sleep(0.01)
             
             salt_score = get_salt_score(dict_you_want["name"])
+
             if salt_score == None:
                 continue
             #Add it to the dict
             dict_you_want["salt"] = salt_score
             wanted_list.append(dict_you_want)
+            #add the name into a dict to keep track of duplicatres. 
             already_named[dict_you_want["name"]] = 1 
 
         #print this to a file!
@@ -154,14 +163,14 @@ def preprocessing(pdata):
             pdata["has_keyword_"+i] = "1"
         else: 
             pdata["has_keyword_"+i] = "0"
-
+    #Then all the games its included in. 
     current = pdata.pop('games')
     for i in ["paper","mtgo","arena"]:
         if i in current:
             pdata["is_in_"+i] = "1"
         else: 
             pdata["is_in_"+i] = "0"
-
+    #Then the possible finished (Foil,Non-foil)
     current = pdata.pop('finishes')
     for i in ["nonfoil","foil"]:
         if i in current:
@@ -193,17 +202,23 @@ def gather_ready_data(pdata, grouping):
     except:
         final_list = []
         y_vec = []
-        counter = 0
+        #Counter for bug testing purposes. 
+        #counter = 0
+        #For each of the items in the dataset:
         for i in pdata:
             # list_vals =  np.array(list(i.values()))
+            #Flatten Dicts 
             clean_dict = preprocessing(i) 
             no_dict_list_vals = flatdict.FlatDict(clean_dict, delimiter = ".")
+            #Remove the salt score, and add that to a seperate y_vec
             y_vec.append(no_dict_list_vals.pop("salt"))
-
+            #flatten it into a list.
             list_vals = list(no_dict_list_vals.values())
+            #Call reduce list to remove all the nested lists. 
             np_list = reduce_list(list_vals)
+            #Turn all the trues and falses into 1's and 0's
+            #And everything else into a string. 
             for i in range(len(np_list)):
-               
                 if np_list[i] == True: 
                     np_list[i] = "1"
                 elif np_list[i] == False:
@@ -212,10 +227,11 @@ def gather_ready_data(pdata, grouping):
                     np_list[i] = str(np_list[i])
 
 
-
+            #add the processed data to the list. 
             final_list.append(np_list) 
-            counter += 1
-            print(counter)
+            #Coutner for bugtesting purposes. 
+            #counter += 1
+            #print(counter)
         
         #print this to a file!
         if grouping == "training":
@@ -239,6 +255,7 @@ def gather_ready_data(pdata, grouping):
 
 
 def split_data(p_data):
+    """ Used to partition data into 3 seperate sets, training, validation and testing"""
     random.shuffle(p_data)
     length = len(p_data)
     k1 = int((length * 7)/10)
@@ -253,7 +270,7 @@ def split_data(p_data):
 
 
 def reduce_list(plist):
-
+    """Used to get rid of nested lists. To flatten"""
     flat_list = []
     
     for xs in plist:
@@ -266,39 +283,91 @@ def reduce_list(plist):
     return flat_list
     
 
+
+def make_layer(p_training):
+    """The function that will make a text-vectorization layer that we can 
+    put the individual observations into to create a deep leraning friendly vecotr 
+    of 262 integers. """
+    try:
+        #intentionally cause an error to remake the layer.
+        #ERRORxERROR
+
+        #Attempt to load the model from file. 
+        print("attempting to take layer")
+        loaded_model = tf.keras.models.load_model("vector-text-model.keras")
+        loaded_vectorizer = loaded_model.layers[0]
+        print("got layer")
+
+        return loaded_vectorizer
+
+    except:
+        #Create text vectorization layer
+        layer = keras.layers.TextVectorization(split= None,output_mode="int")
+        #The ideal code, cannot get it to be homogenounous. 
+        #layer = keras.layers.TextVectorization(split="whitespace",output_sequence_length=6,output_mode="int")
+        
+        
+        #Adapt the layer to encapsulate all the training data. 
+        for i in p_training:
+            layer.adapt(i)
+
+        #Initial effor of inputting all the data in one go, without the for loop
+        #Just decided to do a forloop, the additional time for running it was worth
+        #The additional data we were able to transfer.
+
+        #all_words = set()
+        #counter = 0
+        #for i in p_training[:5000]:
+        #    print(counter)
+        #    counter += 1
+        #    for j in i:
+        # bcuease this is coded in UTF8 for us to save the file, we have to remove the problematic characters
+         #       if '\u01f5' not in j and '\u0106' not in j and '\u010d' not in j and '\u2605' not in j and '\u2610' not in j and '\u2212' not in j and '\u0142' not in j and '\u01f5' not in j and '\u01f5' not in j: 
+         #           all_words.add((j))
+        #print(np.array(p_training[:5000]))
+        #layer.adapt((tf.stack(p_training[:5000])), batch_size="1")
+        #layer.adapt((tf.stack(p_training[:5000])))
+        #layer.adapt(np.array(list(all_words)))
+
+
+        #Add it to a sequential model so that we are able to save it to a file
+        vector_text_model = tf.keras.models.Sequential()
+        vector_text_model.add(tf.keras.Input(shape=(262,)))
+        vector_text_model.add(layer)
+        
+        #Save it to the file.
+        filepath = "vector-text-model.keras"
+        vector_text_model.save(filepath)
+
+        return layer
+    
+
 def make_deep_learning(ptraining,p_y_vec,p_validationStuff,p_test_data,p_test_y_vec):
-    #IDK WHAT VALIDATION IS USED FOR YET
-    #RETURNS A KERAS MODEL. 
-    #MAKES IT IF IT DOESNT EXSIST 
+    """Create a deep learning model, 
+    If a .keras file already exsists, then it will gather that information. 
+    Otherwise it will create one train it, test it, and save it to a .keras file
+    """
     try: 
-        ERRORxERROR
+        #ERRORxERROR
+        #If the model exsists in the file.
         print("trying_to_read_model")
-        model = keras.models.load_model("path_to_my_model.keras")
+        model = keras.models.load_model('my_model.keras')
         print("taken")
         return model
 
     except:
-
-        #Preprocess again :SOB: 
-        #two options, Either splitting it on white space, or not. If we do itll 
-        #make it a 2D array, which i think is larger than not. 
-        #if we dont i THINK we will lose a bit of inforamtion, becuase each word wont be encoded.
-
-        #TESTINg
-        layer = keras.layers.TextVectorization(split = None)
-        #layer = keras.layers.TextVectorization()
-
-
-        for i in ptraining:
-            layer.adapt(i)
-
+        #Create the TextVectorization Layer.
+        layer = make_layer(ptraining)
+        
+        #Apply the textVectorization layer to each of the data points. 
         x = []
         for i in ptraining:
             v_text = layer(i)
             x.append(v_text)
-        x = tf.stack(x)
+        print(x)
+        x = tf.stack(x) #turn into tensorflow object
 
-
+        #Repeat for validation set
         validatio_x = []
         
         for i in p_validationStuff[0]:
@@ -309,88 +378,102 @@ def make_deep_learning(ptraining,p_y_vec,p_validationStuff,p_test_data,p_test_y_
             
         validation_full = (validatio_x,p_validationStuff[1])
         
-
+        #Also for the test data. 
         test_x = []
         for i in p_test_data:
             test_v_text = layer(i)
             test_x.append(test_v_text)
-        predict_data =  test_x[-1]
-        predict_salt = p_test_y_vec[-1]
 
+        #The "Craterhoof" metric 
+        predict_data =  tf.stack([test_x[-2]])
+        predict_salt = p_test_y_vec[-2]
 
-        p_test_y_vec = p_test_y_vec[:-1]
-        test_x = test_x[:-1]
+        #Everything but the craterhoof, 
+        p_test_y_vec = p_test_y_vec[:-2]
+        test_x = test_x[:-2]
         test_x = tf.stack(test_x)
-    
-    
 
-        """
-        inputs = keras.Input(shape = (262,))
-    
-        dense = layers.Dense(64, activation="relu")(inputs)
-        #Do a dropout here, 
-        dense2 = layers.Dense(64, activation="relu")(dense)
-        
-        outputs = layers.Dense(10)(dense2)
-        model = keras.Model(inputs=inputs, outputs=outputs, name="mnist_model")
-        """
+        """print("Training Size")
+        print(x)
+        print(p_y_vec)
 
+        print("Validation Size")
+        print(validatio_x)
+        print(p_validationStuff[1])
+
+        print("Testing Size")
+        print(test_x)
+        print(p_test_y_vec)
+
+        print("Prediction Size")
+        print(predict_data)"""
+
+        #Create the Sequential Model
         model = tf.keras.models.Sequential([
-            tf.keras.layers.Input(shape=(262,)),
-            #tf.keras.layers.Flatten(),
-            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Input(name = "Input", shape=(262,)),
+            tf.keras.layers.Dense(64, activation='relu',name = "Layer1"),
             tf.keras.layers.Dropout(0.2),
-            tf.keras.layers.Dense(64, activation='relu'),
-            #tf.keras.layers.Dropout(0.2),
-            #tf.keras.layers.Dense(10,activation="relu"),
-            tf.keras.layers.Dense(1)
+            tf.keras.layers.Dense(64, activation='relu',name = "Layer2"),
+            tf.keras.layers.Dense(1,name = "Output")
 
         ])
 
-        model.compile(
-            #This one can either be mean absolute error, 
-            #or mean squared logarithmic error. Im not sure which is better.
-            #keras.losses.MeanSquaredLogarithmicError(
-            #reduction="sum_over_batch_size", name="mean_squared_logarithmic_error"
-            #)
-        
-            loss=keras.losses.MeanAbsoluteError(
-                                                reduction="sum_over_batch_size", 
-                                                name="mean_absolute_error"
-                                                ),
-            #optimizer=keras.optimizers.Adam(),
-            #Reddit says adam is better, and a combination of adagrad and smn else, but idk what that smn else is so we do gradient decent. 
 
-            optimizer=keras.optimizers.Adagrad(),
+        #Compile the model, 
+        #Choose loss, optimizer and metrics. 
+        #more information about reasons chosen, and what the final model is, in the report. 
+        model.compile(
+        
+            #loss=keras.losses.MeanAbsoluteError(
+            #                                    reduction="sum_over_batch_size", 
+            #                                    name="mean_absolute_error"
+            #                                   ),
+            loss=  keras.losses.MeanSquaredError(
+                                                    reduction="sum_over_batch_size", name="mean_squared_error"
+                                                ),
+            #loss = keras.losses.MeanSquaredLogarithmicError(
+            #                                               reduction="sum_over_batch_size", name="mean_squared_logarithmic_error"
+            #                                            ),
+            #Reddit says adam is better, and a combination of adagrad and smn else, but idk what that smn else is so we do gradient decent. 
+            
             #There are alot and alot of parameters that we need to account for in the constructor. 
-            #I think the biggest one is learning rate and maybe momentum, 
-            #But well see!
+            #I the biggest one is learning rate, 
+
+            #optimizer=keras.optimizers.Adagrad(learning_rate=0.5),
+            optimizer=keras.optimizers.Adam(learning_rate=0.001),
+            #optimizer = keras.optimizers.RMSprop(),
+            
+            
             metrics=[keras.metrics.MeanSquaredError(name="mean_squared_error", dtype=None)],
+
             #We can use a loss function as a metric, This metric is 
             #Not used when training, but only on testing. Can be the same as the loss
             #I think any regression one should work. Im just gonna use mean squared error. 
         )
+        
+
+
         history = model.fit(
                             x, 
                             p_y_vec, 
-                            #validation_data = validation_full,
-                            validation_split = 0.2,
-                            verbose = 1
+                            validation_data = validation_full,
+                            #validation_split = 0.2,
+                            verbose = 1,
+                            batch_size = 1
                             #MAYBE SAMPLE WEIGHT. 
                             )
         
         results = model.evaluate(
                         test_x,
-                        p_test_y_vec
+                        p_test_y_vec,
+                        batch_size = 1
+
                         )
 
-        print(results)
-        preditction = model.predict(predict_data)
-        print(preditction)
-
+        #Save Model
+        #print(results)
         model.summary()
-        model.save("path_to_my_model.keras")
-
+        model.save("my_model.keras")
 
         return model
 
@@ -400,9 +483,11 @@ def test_model(pmodel,p_testing_x,p_y_vec):
     return test_scores
 
 def main():
-    #THIS SHOULDNT BE LIKE THIS, ITS VERY VERY BAD CODE QUALITY, 
-    #BUT I CANT BE BOTHERED TO PUJT IT BACK INTO THE FUNCTION< 
-    #TRY NOT TO TOUCH IT ITS PRONE TO EXPLOSIONS. 
+    """Main function of the file. 
+    Will gather the data, making it if it not avaialbe.
+    Partition it into training, validaitoin and testing data, 
+    and will create a model and a textVectorization layer
+    And then evalate it and print the results of that evaluation"""
     data = gather_data()
     training,validation,testing  = split_data(data)
     print(len(data))
@@ -418,7 +503,18 @@ def main():
 
     model = make_deep_learning(data_file_training,y_vec,(data_file_validation,y_vec_validation),data_file_testing,y_vec_testing)
 
+    
+    layer = make_layer("doesnt matter")
+    
+    #Prediction for the "Craterhoof Metric"
+    print("Guessed By Model: ")
+    print(model(layer(tf.stack([data_file_testing[-2]])))) 
 
+    #print(layer(tf.stack([data_file_testing[-2]])))
+    print("Actual Salt: ")
+    #print(data_file_testing[-2])
+    print(y_vec_testing[-2])
+    
 
 
     
