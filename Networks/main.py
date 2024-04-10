@@ -2,6 +2,7 @@ import numpy
 #have to pip install this one
 from pgmpy.factors.discrete import TabularCPD 
 from pgmpy.models import BayesianNetwork
+from pgmpy.inference import VariableElimination
 import pgmpy
 #Exploring PGMPY to see if its worth over manually coding numpy. 
 model = BayesianNetwork()
@@ -270,7 +271,80 @@ print(model.check_model())
 
 
 #Load it into a VE Object. 
-inference = pgmpy.inference.VariableElimination(model)
+inference = VariableElimination(model)
+
+#test query: an obvious one!
+player_wins_query = inference.query(['player_winning'], {'player_current_health':'0-5', 'opp_current_health':'6-10'})
+
+#chance of players winning based on the colours they play
+player_wins_azur_query = inference.query(['player_winning'], {'has_red':'False', 'has_black':'False', 'has_blue':'True', 'has_green':'False', 'has_white':'True'})
+player_wins_orzhov_query = inference.query(['player_winning'], {'has_red':'False', 'has_black':'True', 'has_blue':'False', 'has_green':'False', 'has_white':'True'})
+player_wins_boros_query = inference.query(['player_winning'], {'has_red':'True', 'has_black':'False', 'has_blue':'False', 'has_green':'False', 'has_white':'True'})
+player_wins_seles_query = inference.query(['player_winning'], {'has_red':'False', 'has_black':'False', 'has_blue':'False', 'has_green':'True', 'has_white':'True'})
+player_wins_dimir_query = inference.query(['player_winning'], {'has_red':'False', 'has_black':'True', 'has_blue':'True', 'has_green':'False', 'has_white':'False'})
+player_wins_izzet_query = inference.query(['player_winning'], {'has_red':'True', 'has_black':'False', 'has_blue':'True', 'has_green':'False', 'has_white':'False'})
+player_wins_simic_query = inference.query(['player_winning'], {'has_red':'False', 'has_black':'False', 'has_blue':'True', 'has_green':'True', 'has_white':'False'})
+player_wins_rakdos_query = inference.query(['player_winning'], {'has_red':'True', 'has_black':'True', 'has_blue':'False', 'has_green':'False', 'has_white':'False'})
+player_wins_golgari_query = inference.query(['player_winning'], {'has_red':'False', 'has_black':'True', 'has_blue':'False', 'has_green':'True', 'has_white':'False'})
+player_wins_gruul_query = inference.query(['player_winning'], {'has_red':'True', 'has_black':'False', 'has_blue':'False', 'has_green':'True', 'has_white':'False'})
+player_wins_wubrg_query = inference.query(['player_winning'], {'has_red':'True', 'has_black':'True', 'has_blue':'True', 'has_green':'True', 'has_white':'True'})
+
+print("Probability that an Azorius (WU) Player Wins")
+print(player_wins_azur_query)
+print("")
+print("Probability that an Orzhov (WB) Player Wins")
+print(player_wins_orzhov_query)
+print("")
+print("Probability that a Boros (WR) Player Wins")
+print(player_wins_boros_query)
+print("")
+print("Probability that a Selesnya (WG) Player Wins")
+print(player_wins_seles_query)
+print("")
+print("Probability that a Dimir (UB) Player Wins")
+print(player_wins_dimir_query)
+print("")
+print("Probability that an Izzet (UR) Player Wins")
+print(player_wins_izzet_query)
+print("")
+print("Probability that a Simic (UG) Player Wins")
+print(player_wins_simic_query)
+print("")
+print("Probability that a Rakdos (BR) Player Wins")
+print(player_wins_rakdos_query)
+print("")
+print("Probability that a Golgari (BG) Player Wins")
+print(player_wins_golgari_query)
+print("")
+print("Probability that a Gruul (RG) Player Wins")
+print(player_wins_gruul_query)
+print("")
+print("Probability that a Wubrg (WUBRG) Player Wins")
+print(player_wins_wubrg_query)
+print("")
+
+#chance of players winning based on their archetype + other fun archetype interactions
+nonland_perms_aggro_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Aggro'})
+nonland_perms_white_aggro_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Aggro', 'has_white':'True'})
+
+nonland_perms_control_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Control'})
+nonland_perms_mid_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Midrange'})
+nonland_perms_combo_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Combo'})
+
+print("Nonland Permanents if Playing Aggro")
+print(nonland_perms_aggro_query)
+print("")
+print("Nonland Permanents if Playing Aggro Including White")
+print(nonland_perms_white_aggro_query)
+print("")
+print("Nonland Permanents if Playing Control")
+print(nonland_perms_control_query)
+print("")
+print("Nonland Permanents if Playing Midrange")
+print(nonland_perms_mid_query)
+print("")
+print("Nonland Permanents if Playing Combo")
+print(nonland_perms_combo_query)
 
 
 
