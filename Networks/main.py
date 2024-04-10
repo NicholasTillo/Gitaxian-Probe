@@ -7,7 +7,7 @@ import pgmpy
 #Exploring PGMPY to see if its worth over manually coding numpy. 
 model = BayesianNetwork()
 
-#Add all nodes of Bayseian Network 
+#Add all nodes of Bayesian Network 
 model.add_node("player_winning")
 model.add_node("player_cards_in_hand")
 model.add_node("player_current_health")
@@ -26,7 +26,8 @@ model.add_node("has_green")
 model.add_node("opp_cards_in_hand")
 model.add_node("num_player_instants_and_sorceries_played")
 
-
+# Add the edges between each node, also according to the Bayesian Network
+# Edges are directed: parent -> child
 all_edges = [("player_current_health", "player_winning"),
              ("opp_current_health", "player_winning"),
              ("player_creatures_on_board", "opp_current_health"),
@@ -47,11 +48,22 @@ all_edges = [("player_current_health", "player_winning"),
              ("num_opp_lands", "opp_creatures_on_board"),
             ]
 
+# Add all the edges to our modelled network...
 model.add_edges_from(all_edges)
 
-#Begin to add the CPD's to the Baysian.
+#Begin to add the CPD's to the Bayesian.
 
+"""
+    Each CPD is in the following format:
+    (
+        '(node name that the CPD is in regards to)', (num. categories of main node states),
+        [CP values], ['(name of evidence nodes, if any)'], [(ordered state values for the evidence)],
+        ['(ordered state names for the evidence)']
+    )
 
+    More information can be found here, referencing the documentation:
+    https://pgmpy.org/factors/discrete.html
+"""
 #Player Deck Archetype 
 player_arch_CPD = TabularCPD('deck_archetype',4, [[64/300], 
                                                   [83/300], 
@@ -59,64 +71,51 @@ player_arch_CPD = TabularCPD('deck_archetype',4, [[64/300],
                                                   [23/300]],
                         evidence=[], evidence_card=[],
                         state_names={'deck_archetype': ['Aggro', 'Control', 'Midrange', 'Combo']})
-#Add it to the model
-model.add_cpds(player_arch_CPD)
+model.add_cpds(player_arch_CPD)  #Add it to the model
 
 
 #Black in Player Colour Identity
 player_black_CPD = TabularCPD('has_black',2, [[144/300], [156/300]],
                         evidence=[], evidence_card=[],
                         state_names={'has_black': ['True', 'False']})
-#Add it to the model
-model.add_cpds(player_black_CPD)
+model.add_cpds(player_black_CPD)  #Add it to the model
 
 
 #Red in Player Colour Identity
 player_red_CPD = TabularCPD('has_red',2, [[148/300], [152/300]],
                         evidence=[], evidence_card=[],
                         state_names={'has_red': ['True', 'False']})
-#Add it to the model
-model.add_cpds(player_red_CPD)
+model.add_cpds(player_red_CPD)  #Add it to the model
 
 
 #White in Player Colour Identity
 player_white_CPD = TabularCPD('has_white',2, [[126/300], [174/300]],
                         evidence=[], evidence_card=[],
                         state_names={'has_white': ['True', 'False']})
-#Add it to the model
-model.add_cpds(player_white_CPD)
+model.add_cpds(player_white_CPD)  #Add it to the model
 
 
 #Green in Player Colour Identity
 player_green_CPD = TabularCPD('has_green',2, [[123/300], [177/300]],
                         evidence=[], evidence_card=[],
                         state_names={'has_green': ['True', 'False']})
-#Add it to the model
-model.add_cpds(player_green_CPD)
+model.add_cpds(player_green_CPD)  #Add it to the model
 
 
 #Blue in Player Colour Identity
 player_blue_CPD = TabularCPD('has_blue',2, [[140/300], [160/300]],
                         evidence=[], evidence_card=[],
                         state_names={'has_blue': ['True', 'False']})
-#Add it to the model
-model.add_cpds(player_blue_CPD)
+model.add_cpds(player_blue_CPD)  #Add it to the model
 
 
 #Number of lands on opponent's board
 opp_lands_CPD = TabularCPD('num_opp_lands', 3, [[69/300], [132/300], [99/300]],
                         evidence=[], evidence_card=[],
                         state_names={'num_opp_lands': ['0-2', '3-5', '6-8']})
-#Add it to the model
-model.add_cpds(opp_lands_CPD)
+model.add_cpds(opp_lands_CPD)  #Add it to the model
 
 
-#Opponent's current health
-# opp_health_CPD = TabularCPD('opp_current_health', 4, [[[[8/300],[11/300],[9/300]],[[15/300],[18/300],[2/300]]], [[[14/300],[10/300],[6/300]],[[11/300],[6/300],[2/300]]], [[[39/300],[26/300],[3/300]],[[45/300],[11/300],[6/300]]], [[[13/300],[7/300],[2/300]],[[23/300],[10/300],[3/300]]]],
-#                         evidence=['has_red', 'player_creatures_on_board'], evidence_card=[2,3],
-#                         state_names={'opp_current_health': ['0-5', '6-10', '11-15', '16-20'],
-#                                      'has_red':['True', 'False'],
-#                                      'player_creatures_on_board':['0-2','3-5','6-8']})
 opp_health_CPD = TabularCPD('opp_current_health', 4, [[8/74,11/54,9/20,15/94,18/45,2/13], 
                                                       [14/74,10/54,6/20,11/94,6/45,2/13], 
                                                       [39/74,26/54,3/20,45/94,11/45,6/13], 
@@ -125,10 +124,7 @@ opp_health_CPD = TabularCPD('opp_current_health', 4, [[8/74,11/54,9/20,15/94,18/
                         state_names={'opp_current_health': ['0-5', '6-10', '11-15', '16-20'],
                                      'has_red':['True', 'False'],
                                      'player_creatures_on_board':['0-2','3-5','6-8']})
-
-
-#Add it to the model
-model.add_cpds(opp_health_CPD)
+model.add_cpds(opp_health_CPD)  #Add it to the model
 
 
 #Player Lands On Board
@@ -139,7 +135,7 @@ player_land_CPD = TabularCPD('num_player_lands', 3, [[47/123, 119/177],
                             state_names={'num_player_lands': ['0-2','3-5','6-8'],
                                          'has_green': ["True","False"]}
                             )
-model.add_cpds(player_land_CPD)
+model.add_cpds(player_land_CPD)  #Add it to the model
 
 #instants and Sorceries
 instant_sorceries_CPD = TabularCPD('num_player_instants_and_sorceries_played', 3, [[23/140, 132/160],
@@ -149,9 +145,9 @@ instant_sorceries_CPD = TabularCPD('num_player_instants_and_sorceries_played', 3
                             state_names={'num_player_instants_and_sorceries_played': ['0-2','3-5','6-8'],
                                          'has_blue': ["True","False"]}
                             )
-model.add_cpds(instant_sorceries_CPD)
+model.add_cpds(instant_sorceries_CPD)  #Add it to the model
 
-#Num Cards IN Player Hand
+#Num Cards in Player Hand
 num_cards_in_player_hand_CPD = TabularCPD('player_cards_in_hand', 3, [[2/140, 48/160],
                                                                         [55/140,93/160],
                                                                         [83/140,19/160]],
@@ -159,7 +155,7 @@ num_cards_in_player_hand_CPD = TabularCPD('player_cards_in_hand', 3, [[2/140, 48
                             state_names={'player_cards_in_hand': ['0-2','3-5','6-7'],
                                          'has_blue': ["True","False"]}
                             )
-model.add_cpds(num_cards_in_player_hand_CPD)
+model.add_cpds(num_cards_in_player_hand_CPD)  #Add it to the model
 
 #Num Cards In Opponents Hand
 num_cards_in_opponent_hand_CPD = TabularCPD('opp_cards_in_hand', 3, [[89/144, 41/156],
@@ -169,17 +165,7 @@ num_cards_in_opponent_hand_CPD = TabularCPD('opp_cards_in_hand', 3, [[89/144, 41
                             state_names={'opp_cards_in_hand': ['0-2','3-5','6-7'],
                                          'has_black': ["True","False"]}
                             )
-model.add_cpds(num_cards_in_opponent_hand_CPD)
-
-
-# player_health_CPD = TabularCPD('player_current_health', 4, [[[[[3/300],[0/300],[1/300]],[[9/300],[4/300],[1/300]]],[[[3/300],[2/300],[2/300]],[[13/300],[3/300],[2/300]]]],[[[[9/300],[4/300],[0/300]],[[11/300],[2/300],[0/300]]],[[[9/300],[8/300],[3/300]],[[13/300],[6/300],[2/300]]]],[[[[14/300],[4/300],[0/300]],[[15/300],[5/300],[1/300]]],[[[13/300],[7/300],[3/300]],[[12/300],[6/300],[0/300]]]],[[[[24/300],[8/300],[0/300]],[[22/300],[7/300],[0/300]]],[[[17/300],[6/300],[2/300]],[[19/300],[5/300],[0/300]]]]],
-#                         evidence=['has_black', 'has_white', 'opp_creatures_on_board'], evidence_card=[2,2,3],
-#                         state_names={'player_current_health': ['0-5', '6-10', '11-15', '16-20'],
-#                                      'has_black':['True', 'False'],
-#                                      'has_white':['True', 'False'],
-#                                      'opp_creatures_on_board':['0-2','3-5','6-8']})
-# #Add it to the model
-# model.add_cpds(player_health_CPD)
+model.add_cpds(num_cards_in_opponent_hand_CPD)  #Add it to the model
 
 #Player's current health
 player_health_CPD = TabularCPD('player_current_health', 4, [[3/50,0/16,1/1,9/57,4/18,1/2,3/42,2/23,2/10,13/57,3/20,2/4],
@@ -191,24 +177,9 @@ player_health_CPD = TabularCPD('player_current_health', 4, [[3/50,0/16,1/1,9/57,
                                      'has_black':['True', 'False'],
                                      'has_white':['True', 'False'],
                                      'opp_creatures_on_board':['0-2','3-5','6-8']})
-#Add it to the model
-model.add_cpds(player_health_CPD)
+model.add_cpds(player_health_CPD)  #Add it to the model
 
-
-#Player Winning
-# player_winning_CPD = TabularCPD('player_winning', 2, [[12 /300,6/300,2/300,0/300,
-#                                                        9/300,8/300,8/300,3/300,
-#                                                        16/300,13/300,9/300,5/300,
-#                                                        12/300,19/300,3/300,23/300],
-#                                                         [9/300,13/300,16/300,15/300,
-#                                                         4/300,9/300,7/300,14/300,
-#                                                         0/300,2/300,13/300,17/300,
-#                                                         1/300,0/300,9/300,23/300]],
-#                             evidence=['player_current_health','opp_current_health'], evidence_card=[4,4],
-#                             state_names={'player_winning': ['True','False'],
-#                                          'player_current_health': ["0-5","6-10","11-15","16-20"],
-#                                          'opp_current_health': ["0-5","6-10","11-15","16-20"]}
-#                             )
+# Player winning
 player_winning_CPD = TabularCPD('player_winning', 2, [[12/21,6/19,2/18,0/15,
                                                        9/13,8/17,8/15,3/17,
                                                        16/16,13/15,9/22,5/22,
@@ -222,7 +193,7 @@ player_winning_CPD = TabularCPD('player_winning', 2, [[12/21,6/19,2/18,0/15,
                                          'player_current_health': ["0-5","6-10","11-15","16-20"],
                                          'opp_current_health': ["0-5","6-10","11-15","16-20"]}
                             )
-model.add_cpds(player_winning_CPD)
+model.add_cpds(player_winning_CPD)  #Add it to the model
 
 #Number Player Creatures
 number_player_creatures_CPD = TabularCPD('player_creatures_on_board', 3, [[5/22,3/20,12/19,3/26,5/21,  7/15,  3/26, 7/34,11/23,2/31,8/30,18/33]
@@ -234,7 +205,7 @@ number_player_creatures_CPD = TabularCPD('player_creatures_on_board', 3, [[5/22,
                                          'has_black': ["True","False"],
                                          'player_cards_in_hand': ["0-2","3-5","6-7"]}
                             )
-model.add_cpds(number_player_creatures_CPD)
+model.add_cpds(number_player_creatures_CPD)  #Add it to the model
 
 
 #Player Non Land Permenants
@@ -246,7 +217,7 @@ player_nonland_permenants_CPD = TabularCPD('player_nonland_permenants_on_board',
                                          'has_white': ["True","False"],
                                          'deck_archetype': ['Aggro', 'Control', 'Midrange', 'Combo']}
                             )
-model.add_cpds(player_nonland_permenants_CPD)
+model.add_cpds(player_nonland_permenants_CPD)  #Add it to the model
 
 
 #Opponents Creatures on Board
@@ -258,17 +229,11 @@ opp_creatures_board_CPD = TabularCPD('opp_creatures_on_board', 3, [[3/22,7/24,16
                                          'num_opp_lands': ["0-2","3-5","6-8"],
                                          'opp_cards_in_hand': ["0-2","3-5","6-7"]}
                             )
-model.add_cpds(opp_creatures_board_CPD)
-
-
-
+model.add_cpds(opp_creatures_board_CPD)  #Add it to the model
 
 
 #Check if model is valid. 
-
-print(model.get_parents("opp_creatures_on_board"))
 print(model.check_model())
-
 
 #Load it into a VE Object. 
 inference = VariableElimination(model)
@@ -323,7 +288,7 @@ print("Probability that a Wubrg (WUBRG) Player Wins")
 print(player_wins_wubrg_query)
 print("")
 
-#chance of players winning based on their archetype + other fun archetype interactions
+#chance of players having nonland permanents depending on their archetype
 nonland_perms_aggro_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Aggro'})
 nonland_perms_white_aggro_query = inference.query(['player_nonland_permenants_on_board'], {'deck_archetype':'Aggro', 'has_white':'True'})
 
@@ -346,6 +311,82 @@ print("")
 print("Nonland Permanents if Playing Combo")
 print(nonland_perms_combo_query)
 
+#The following queries relate to the home games played by us...
+#Refer to the documentation for more information about this +
+# analysis of the results!
+game1_query = inference.query(['player_winning'], 
+                              {'num_player_lands':'6-8', 
+                               'player_current_health':'16-20',
+                               'player_nonland_permenants_on_board':'3-5',
+                               'player_cards_in_hand':'0-2',
+                               'player_creatures_on_board':'3-5',
+                               'num_player_instants_and_sorceries_played':'0-2',
+                               'deck_archetype':'Midrange',
+                               'has_black':'True',
+                               'has_white':'True',
+                               'has_red':'False',
+                               'has_green':'False',
+                               'has_blue':'False',
+
+                               'num_opp_lands':'3-5',
+                               'opp_current_health':'0-5',
+                               'opp_cards_in_hand':'3-5',
+                               'opp_creatures_on_board':'3-5'
+                              })
+
+game2_query = inference.query(['player_winning'], 
+                              {'num_player_lands':'3-5', 
+                               'player_current_health':'0-5',
+                               'player_nonland_permenants_on_board':'0-2',
+                               'player_cards_in_hand':'0-2',
+                               'player_creatures_on_board':'0-2',
+                               'num_player_instants_and_sorceries_played':'0-2',
+                               'deck_archetype':'Midrange',
+                               'has_black':'True',
+                               'has_white':'True',
+                               'has_red':'False',
+                               'has_green':'False',
+                               'has_blue':'False',
+
+                               'num_opp_lands':'3-5',
+                               'opp_current_health':'16-20',
+                               'opp_cards_in_hand':'0-2',
+                               'opp_creatures_on_board':'3-5'
+                              })
+
+game3_query = inference.query(['player_winning'], 
+                              {'num_player_lands':'3-5', 
+                               'player_current_health':'16-20',
+                               'player_nonland_permenants_on_board':'0-2',
+                               'player_cards_in_hand':'0-2',
+                               'player_creatures_on_board':'0-2',
+                               'num_player_instants_and_sorceries_played':'0-2',
+                               'deck_archetype':'Midrange',
+                               'has_black':'True',
+                               'has_white':'True',
+                               'has_red':'False',
+                               'has_green':'False',
+                               'has_blue':'False',
+
+                               'num_opp_lands':'3-5',
+                               'opp_current_health':'11-15',
+                               'opp_cards_in_hand':'0-2',
+                               'opp_creatures_on_board':'0-2'
+                              })
+
+print("")
+print("Probability of Player Winning Game 1")
+print(game1_query)
+
+print("")
+print("Probability of Player Winning Game 2")
+print(game2_query)
+
+print("")
+print("Probability of Player Winning Game 3")
+print(game3_query)
+
+#eof
 
 
 
